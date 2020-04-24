@@ -54,7 +54,7 @@ No
 ## Dependencies
 
 - upp-kafka
-- native-writer
+- nativestorereaderwriter
 
 ## Failover Architecture Type
 
