@@ -15,4 +15,3 @@ env:
   NATIVE_CONTENT_UUID_FIELDS: "" # This should be defined in the specific app-configs folder
   QUEUE_WRITE_TOPIC: "" # This should be defined in the specific app-configs folder
   PANIC_GUIDE_URL: "" # This should be defined in the specific app-configs folder
-eksCluster: false

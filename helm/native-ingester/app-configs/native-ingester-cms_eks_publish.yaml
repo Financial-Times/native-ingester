@@ -1,6 +1,5 @@
 # Values used for the deployed application.
 replicaCount: 2
-eksCluster: true
 service:
   name: native-ingester-cms
 env:
