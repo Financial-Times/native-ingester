@@ -29,14 +29,6 @@ func (pe *publicationEvent) messageType() string {
 	return strings.TrimSpace(pe.Headers["Message-Type"])
 }
 
-func (pe *publicationEvent) schemaVersion() string {
-	return strings.TrimSpace(pe.Headers["X-Schema-Version"])
-}
-
-func (pe *publicationEvent) contentRevision() string {
-	return strings.TrimSpace(pe.Headers["X-Content-Revision"])
-}
-
 // nativeMessage given a kafka message, extracts useful headers and body to adds them into a new NativeMessage struct.
 func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 
