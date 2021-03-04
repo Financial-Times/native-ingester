@@ -64,7 +64,8 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 	if found {
 		msg.AddContentRevision(contentRevision)
 	}
-	logger.NewEntry(pe.transactionID()).Infof("Constructed new NativeMessage with content-type=%s, Origin-System-Id=%s", msg.ContentType(), msg.OriginSystemID())
+	logger.NewEntry(pe.transactionID()).Infof("Constructed new NativeMessage with content-type=%s, Origin-System-Id=%s, Content-Revision=%s, SchemaVersion=%s",
+		msg.ContentType(), msg.OriginSystemID(), msg.ContentRevision(), msg.SchemaVersion())
 
 	return msg, nil
 }

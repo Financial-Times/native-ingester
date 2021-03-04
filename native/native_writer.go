@@ -205,6 +205,14 @@ func (msg *NativeMessage) OriginSystemID() string {
 	return msg.headers[originSystemIDHeader]
 }
 
+func (msg *NativeMessage) SchemaVersion() string {
+	return msg.headers[schemaVersionHeader]
+}
+
+func (msg *NativeMessage) ContentRevision() string {
+	return msg.headers[contentRevisionHeader]
+}
+
 func (msg *NativeMessage) IsPartialContent() bool {
 	return msg.headers[messageTypeHeader] == messageTypePartialContentPublished
 }
