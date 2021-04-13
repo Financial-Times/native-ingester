@@ -29,6 +29,7 @@ func (pe *publicationEvent) messageType() string {
 	return strings.TrimSpace(pe.Headers["Message-Type"])
 }
 
+// nativeMessage given a kafka message, extracts useful headers and body to adds them into a new NativeMessage struct.
 func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 
 	timestamp, found := pe.Headers["Message-Timestamp"]
@@ -55,7 +56,20 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 	if found {
 		msg.AddOriginSystemIDHeader(originSystemID)
 	}
-	logger.NewEntry(pe.transactionID()).Infof("Constructed new NativeMessage with content-type=%s, Origin-System-Id=%s", msg.ContentType(), msg.OriginSystemID())
+	schemaVersion, found := pe.Headers["X-Schema-Version"]
+	if found {
+		msg.AddSchemaVersion(schemaVersion)
+	}
+	contentRevision, found := pe.Headers["X-Content-Revision"]
+	if found {
+		msg.AddContentRevision(contentRevision)
+	}
+	logger.NewEntry(pe.transactionID()).
+		WithField("Content-Type", msg.ContentType()).
+		WithField("Origin-System-Id", msg.OriginSystemID()).
+		WithField("X-Content-Revision", msg.ContentRevision()).
+		WithField("X-Schema-Version", msg.SchemaVersion()).
+		Infof("Constructed new NativeMessage")
 
 	return msg, nil
 }

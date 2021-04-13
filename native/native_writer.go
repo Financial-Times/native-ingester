@@ -21,6 +21,8 @@ const (
 	originSystemIDHeader               = "Origin-System-Id"
 	messageTypeHeader                  = "Message-Type"
 	messageTypePartialContentPublished = "cms-partial-content-published"
+	schemaVersionHeader                = "X-Schema-Version"
+	contentRevisionHeader              = "X-Content-Revision"
 )
 
 // Writer provides the functionalities to write in the native store
@@ -62,7 +64,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
-	httpMethod := "PUT"
+	httpMethod := "POST"
 
 	if msg.IsPartialContent() {
 		httpMethod = "PATCH"
@@ -175,12 +177,20 @@ func (msg *NativeMessage) AddHashHeader(hash string) {
 }
 
 // AddContentTypeHeader adds the content type of the native content as a header
-func (msg *NativeMessage) AddContentTypeHeader(hash string) {
-	msg.headers[contentTypeHeader] = hash
+func (msg *NativeMessage) AddContentTypeHeader(contentType string) {
+	msg.headers[contentTypeHeader] = contentType
 }
 
-func (msg *NativeMessage) AddOriginSystemIDHeader(hash string) {
-	msg.headers[originSystemIDHeader] = hash
+func (msg *NativeMessage) AddOriginSystemIDHeader(sysID string) {
+	msg.headers[originSystemIDHeader] = sysID
+}
+
+func (msg *NativeMessage) AddSchemaVersion(schemaVer string) {
+	msg.headers[schemaVersionHeader] = schemaVer
+}
+
+func (msg *NativeMessage) AddContentRevision(contentRev string) {
+	msg.headers[contentRevisionHeader] = contentRev
 }
 
 func (msg *NativeMessage) TransactionID() string {
@@ -193,6 +203,14 @@ func (msg *NativeMessage) ContentType() string {
 
 func (msg *NativeMessage) OriginSystemID() string {
 	return msg.headers[originSystemIDHeader]
+}
+
+func (msg *NativeMessage) SchemaVersion() string {
+	return msg.headers[schemaVersionHeader]
+}
+
+func (msg *NativeMessage) ContentRevision() string {
+	return msg.headers[contentRevisionHeader]
 }
 
 func (msg *NativeMessage) IsPartialContent() bool {
