@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -11,8 +12,14 @@ func toString(c *Configuration) string {
 		return ""
 	}
 	var str string
-	for oKey, origCollection := range c.Config {
-		str += oKey
+	var keys []string
+	for key := range c.Config {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		origCollection := c.Config[key]
+		str += key
 		for _, val := range origCollection {
 			str += val.ContentType + val.Collection
 		}
@@ -321,9 +328,9 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 	}
 	c := &Configuration{
 		Config: map[string][]OriginSystemConfig{
-			"http://cmdb.ft.com/systems/methode-web-pub": {
+			"http://cmdb.ft.com/systems/pac": {
 				{ContentType: ".*",
-					Collection: "v1-metadata",
+					Collection: "pac-metadata",
 				},
 			},
 			"http://cmdb.ft.com/systems/next-video-editor": {
@@ -345,24 +352,24 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"methode json",
-			args{"http://cmdb.ft.com/systems/methode-web-pub",
+			"pac json",
+			args{"http://cmdb.ft.com/systems/pac",
 				"application/json"},
-			"v1-metadata",
+			"pac-metadata",
 			false,
 		},
 		{
 			"methode null CT",
-			args{"http://cmdb.ft.com/systems/methode-web-pub",
+			args{"http://cmdb.ft.com/systems/pac",
 				""},
-			"v1-metadata",
+			"pac-metadata",
 			false,
 		},
 		{
 			"methode",
-			args{"http://cmdb.ft.com/systems/methode-web-pub",
+			args{"http://cmdb.ft.com/systems/pac",
 				"anytype"},
-			"v1-metadata",
+			"pac-metadata",
 			false,
 		},
 		{

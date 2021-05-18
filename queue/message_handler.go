@@ -40,7 +40,7 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithValidFlag(false).
 			Warn(fmt.Sprintf("Skipping content because of not whitelisted combination (Origin-System-Id, Content-Type): (%s, %s)", pubEvent.originSystemID(), writerMsg.ContentType()))
-		return err
+		return nil
 	}
 
 	contentUUID, updatedContent, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
