@@ -166,6 +166,10 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				},
 			},
 			"http://cmdb.ft.com/systems/cct": {
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-page).*$",
+					Collection:  "pages",
+				},
 				{ContentType: ".*",
 					Collection: "universal-content",
 				},
@@ -178,6 +182,10 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			"http://cmdb.ft.com/systems/spark-lists": {
 				{ContentType: "^(application/)*(vnd.ft-upp-list\\+json).*$",
 					Collection: "universal-content",
+				},
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-page).*$",
+					Collection:  "pages",
 				},
 			},
 		},
@@ -278,6 +286,15 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			false,
 		},
 		{
+			"cct page OK",
+			args{
+				originID:    "http://cmdb.ft.com/systems/cct",
+				contentType: "application/vnd.ft-upp-page+json",
+			},
+			"pages",
+			false,
+		},
+		{
 			"spark article OK",
 			args{"http://cmdb.ft.com/systems/spark",
 				"application/vnd.ft-upp-article+json"},
@@ -288,6 +305,15 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			"spark list OK",
 			args{"http://cmdb.ft.com/systems/spark",
 				"application/vnd.ft-upp-list+json"},
+			"universal-content",
+			false,
+		},
+		{
+			"spark page OK",
+			args{
+				originID:    "http://cmdb.ft.com/systems/spark",
+				contentType: "application/vnd-ft.upp-page+json",
+			},
 			"universal-content",
 			false,
 		},
@@ -304,6 +330,15 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-article+json"},
 			"",
 			true,
+		},
+		{
+			"spark-lists page OK",
+			args{
+				originID:    "http://cmdb.ft.com/systems/spark-lists",
+				contentType: "application/vnd.ft-upp-page+json",
+			},
+			"pages",
+			false,
 		},
 	}
 	for _, tt := range tests {
