@@ -23,11 +23,19 @@
     ],
     "http://cmdb.ft.com/systems/cct": [
         {
+            "content_type": "^(application/)*(vnd.ft-upp-page).*$",
+            "collection": "pages"
+        },
+        {
             "content_type": ".*",
             "collection": "universal-content"
         }
     ],
     "http://cmdb.ft.com/systems/spark": [
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-page).*$",
+            "collection": "pages"
+        },
         {
             "content_type": ".*",
             "collection": "universal-content"
@@ -37,6 +45,10 @@
         {
             "content_type": "^(application/)*(vnd.ft-upp-list).*$",
             "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-page).*$",
+            "collection": "pages"
         }
     ]
 }
