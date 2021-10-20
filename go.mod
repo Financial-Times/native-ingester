@@ -9,6 +9,7 @@ require (
 	github.com/Financial-Times/kafka-client-go v0.0.0-20181214120216-c3a1941e42a4
 	github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d
 	github.com/Shopify/sarama v1.23.1 // indirect
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.3.0
 	github.com/hashicorp/go-version v0.0.0-20170202080759-03c5bf6be031 // indirect
@@ -20,7 +21,6 @@ require (
 	github.com/pierrec/xxHash v0.1.1 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec // indirect
-	github.com/satori/go.uuid v1.1.0
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/wvanbergen/kazoo-go v0.0.0-20180202103751-f72d8611297a // indirect
