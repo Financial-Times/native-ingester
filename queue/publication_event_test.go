@@ -8,7 +8,7 @@ import (
 )
 
 const expectedTID = "tid_test"
-const expectedOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
+const expectedOriginSystemID = "http://cmdb.ft.com/systems/cct"
 const expectedTimestamp = "2017-02-16T12:56:16Z"
 const expectedHash = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
 
