@@ -188,6 +188,12 @@ func TestConfiguration_GetCollection(t *testing.T) {
 					Collection:  "pages",
 				},
 			},
+			"http://cmdb.ft.com/systems/cle": {
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-live-event).*$",
+					Collection:  "universal-content",
+				},
+			},
 		},
 	}
 	err := c.validateConfig()
@@ -339,6 +345,29 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			},
 			"pages",
 			false,
+		},
+		{
+			"Community live event OK",
+			args{"http://cmdb.ft.com/systems/cle",
+				"application/vnd.ft-upp-live-event+json"},
+			"universal-content",
+			false,
+		},
+		{
+			"Community live event wrong CT",
+			args{"http://cmdb.ft.com/systems/cle",
+				"application/vnd.ft-upp-list+json"},
+			"",
+			true,
+		},
+		{
+			"Community live event wrong origin",
+			args{
+				originID:    "http://cmdb.ft.com/systems/community-event",
+				contentType: "application/vnd-ft.upp-live-event+json",
+			},
+			"",
+			true,
 		},
 	}
 	for _, tt := range tests {

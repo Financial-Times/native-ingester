@@ -50,5 +50,11 @@
             "content_type": "^(application/)*(vnd.ft-upp-page).*$",
             "collection": "pages"
         }
+    ],
+    "http://cmdb.ft.com/systems/cle": [
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-live-event).*$",
+            "collection": "universal-content"
+        }
     ]
 }
