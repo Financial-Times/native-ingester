@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	methodeOriginSystemID          = "http://cmdb.ft.com/systems/methode-web-pub"
+	cctOriginSystemID              = "http://cmdb.ft.com/systems/cct"
 	publishRef                     = "tid_test-pub-ref"
 	aUUID                          = "572d0acc-3f12-4e70-8830-8092c1042a52"
 	aTimestamp                     = "2017-02-16T12:56:16Z"
@@ -24,7 +24,6 @@ const (
 	withNativeHashHeader           = true
 	withoutNativeHashHeader        = false
 	messageTypeContentPublished    = "cms-content-published"
-	methodeCollectionName          = "methode"
 	universalContentCollectionName = "universal-content"
 )
 
@@ -62,10 +61,10 @@ func init() {
 			]
    }`
 	strCollectionsOriginIdsMap = `{
-		"http://cmdb.ft.com/systems/methode-web-pub": [
+		"http://cmdb.ft.com/systems/cct": [
 			{
 				"content_type": "(application/json).*",
-				"collection": "methode"
+				"collection": "universal-content"
 			}
 		]
 	}`
@@ -108,9 +107,9 @@ func TestGetCollectionShort(t *testing.T) {
 
 	w := NewWriter("", *testCollectionsOriginIdsMap, p)
 
-	actualCollection, err := w.GetCollection(methodeOriginSystemID, aContentType)
+	actualCollection, err := w.GetCollection(cctOriginSystemID, aContentType)
 	assert.NoError(t, err, "It should not return an error")
-	assert.Equal(t, methodeCollectionName, actualCollection, "It should return the methode collection")
+	assert.Equal(t, universalContentCollectionName, actualCollection, "It should return the universal-content collection")
 
 	_, err = w.GetCollection("Origin-Id-that-do-not-exist", aContentType)
 	assert.EqualError(t, err, "origin system not found", "It should return a collection not found error")
@@ -130,14 +129,14 @@ func TestGetCollection(t *testing.T) {
 	}{
 		{
 			"application/json;version=1.0",
-			"methode",
+			"universal-content",
 			false},
 		{
 			"application/json; version=1.0",
-			"methode",
+			"universal-content",
 			false},
 		{"application/json",
-			"methode",
+			"universal-content",
 			false},
 		{"wrong",
 			"",
@@ -145,7 +144,7 @@ func TestGetCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("Test", func(t *testing.T) {
-			actualCollection, err := w.GetCollection(methodeOriginSystemID, tt.contentType)
+			actualCollection, err := w.GetCollection(cctOriginSystemID, tt.contentType)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestGetVideoCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -162,10 +161,10 @@ func TestGetCollection(t *testing.T) {
 func TestGetAllCollection(t *testing.T) {
 	p := new(ContentBodyParserMock)
 	str := `{
-			"http://cmdb.ft.com/systems/methode-web-pub": [
+			"http://cmdb.ft.com/systems/cct": [
 				{
 					"content_type": ".*",
-					"collection": "methode"
+					"collection": "universal-content"
 				}
 			]
 	}`
@@ -180,22 +179,22 @@ func TestGetAllCollection(t *testing.T) {
 	}{
 		{
 			"application/json;version=1.0",
-			"methode",
+			"universal-content",
 			false},
 		{
 			"application/json; version=1.0",
-			"methode",
+			"universal-content",
 			false},
 		{"application/json",
-			"methode",
+			"universal-content",
 			false},
 		{"wrong",
-			"methode",
+			"universal-content",
 			false},
 	}
 	for _, tt := range tests {
 		t.Run("Test", func(t *testing.T) {
-			actualCollection, err := w.GetCollection(methodeOriginSystemID, tt.contentType)
+			actualCollection, err := w.GetCollection(cctOriginSystemID, tt.contentType)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestGetVideoCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -268,7 +267,7 @@ func TestWriteMessageToCollectionWithSuccess(t *testing.T) {
 	testCollectionsOriginIdsMap, err := getConfig(strCollectionsOriginIdsMap)
 	assert.NoError(t, err, "It should not return an error")
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
-	nws := setupMockNativeWriterService(t, 200, withoutNativeHashHeader, "POST", methodeCollectionName)
+	nws := setupMockNativeWriterService(t, 200, withoutNativeHashHeader, "POST", universalContentCollectionName)
 	defer nws.Close()
 
 	msg, err := NewNativeMessage("{}", aTimestamp, publishRef, messageTypeContentPublished)
@@ -276,7 +275,7 @@ func TestWriteMessageToCollectionWithSuccess(t *testing.T) {
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, *testCollectionsOriginIdsMap, p)
-	contentUUID, _, err := w.WriteToCollection(msg, methodeCollectionName)
+	contentUUID, _, err := w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, aUUID, contentUUID)
@@ -309,7 +308,7 @@ func TestWriteMessageWithHashToCollectionWithSuccess(t *testing.T) {
 	assert.NoError(t, err, "It should not return an error")
 
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
-	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader, "POST", methodeCollectionName)
+	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader, "POST", universalContentCollectionName)
 	defer nws.Close()
 
 	msg, err := NewNativeMessage("{}", aTimestamp, publishRef, messageTypeContentPublished)
@@ -318,7 +317,7 @@ func TestWriteMessageWithHashToCollectionWithSuccess(t *testing.T) {
 	msg.AddContentTypeHeader(aContentType)
 
 	w := NewWriter(nws.URL, *testCollectionsOriginIdsMap, p)
-	contentUUID, _, err := w.WriteToCollection(msg, methodeCollectionName)
+	contentUUID, _, err := w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, aUUID, contentUUID)
@@ -331,7 +330,7 @@ func TestWriteMessageToCollectionWithContentTypeSuccess(t *testing.T) {
 	assert.NoError(t, err, "It should not return an error")
 
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
-	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader, "POST", methodeCollectionName)
+	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader, "POST", universalContentCollectionName)
 	defer nws.Close()
 
 	msg, err := NewNativeMessage("{}", aTimestamp, publishRef, messageTypeContentPublished)
@@ -340,7 +339,7 @@ func TestWriteMessageToCollectionWithContentTypeSuccess(t *testing.T) {
 	msg.AddContentTypeHeader(aContentType)
 
 	w := NewWriter(nws.URL, *testCollectionsOriginIdsMap, p)
-	contentUUID, _, err := w.WriteToCollection(msg, methodeCollectionName)
+	contentUUID, _, err := w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, aUUID, contentUUID)
@@ -353,7 +352,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfMissingUUID(t *testing.T) {
 	assert.NoError(t, err, "It should not return an error")
 
 	p.On("getUUID", aContentBody).Return("", errors.New("UUID not found"))
-	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader, "POST", methodeCollectionName)
+	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader, "POST", universalContentCollectionName)
 	defer nws.Close()
 
 	msg, err := NewNativeMessage("{}", aTimestamp, publishRef, messageTypeContentPublished)
@@ -361,7 +360,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfMissingUUID(t *testing.T) {
 	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, *testCollectionsOriginIdsMap, p)
-	_, _, err = w.WriteToCollection(msg, methodeCollectionName)
+	_, _, err = w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.EqualError(t, err, "UUID not found", "It should return a  UUID not found error")
 	p.AssertExpectations(t)
@@ -373,7 +372,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceInternalError(t
 	assert.NoError(t, err, "It should not return an error")
 
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
-	nws := setupMockNativeWriterService(t, 500, withoutNativeHashHeader, "POST", methodeCollectionName)
+	nws := setupMockNativeWriterService(t, 500, withoutNativeHashHeader, "POST", universalContentCollectionName)
 	defer nws.Close()
 
 	msg, err := NewNativeMessage("{}", aTimestamp, publishRef, messageTypeContentPublished)
@@ -382,7 +381,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceInternalError(t
 	msg.AddContentTypeHeader(aContentType)
 
 	w := NewWriter(nws.URL, *testCollectionsOriginIdsMap, p)
-	_, _, err = w.WriteToCollection(msg, methodeCollectionName)
+	_, _, err = w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.EqualError(t, err, "Native writer returned non-200 code", "It should return a non-200 HTTP status error")
 	p.AssertExpectations(t)
@@ -401,7 +400,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceNotAvailable(t 
 	msg.AddContentTypeHeader(aContentType)
 
 	w := NewWriter("http://an-address.com", *testCollectionsOriginIdsMap, p)
-	_, _, err = w.WriteToCollection(msg, methodeCollectionName)
+	_, _, err = w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.Error(t, err, "It should return an error")
 	p.AssertExpectations(t)

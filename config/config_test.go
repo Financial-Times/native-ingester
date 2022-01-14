@@ -37,9 +37,9 @@ func TestValidateConfig(t *testing.T) {
 			"config Ok",
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": {
+					"http://cmdb.ft.com/systems/cct": {
 						{ContentType: ".*",
-							Collection: "methode",
+							Collection: "universal-content",
 						},
 					},
 				},
@@ -50,9 +50,9 @@ func TestValidateConfig(t *testing.T) {
 			"Empty ContentType",
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": {
+					"http://cmdb.ft.com/systems/cct": {
 						{ContentType: "",
-							Collection: "methode",
+							Collection: "universal-content",
 						},
 					},
 				},
@@ -63,7 +63,7 @@ func TestValidateConfig(t *testing.T) {
 			"Empty Collection",
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": {
+					"http://cmdb.ft.com/systems/cct": {
 						{ContentType: "-",
 							Collection: "",
 						},
@@ -94,10 +94,10 @@ func TestReadConfig(t *testing.T) {
 		{
 			"Test1",
 			`{
-				"http://cmdb.ft.com/systems/methode-web-pub": [
+				"http://cmdb.ft.com/systems/cct": [
 						{
 							"content_type": ".*",
-							"collection": "methode"
+							"collection": "universal-content"
 						}
 					],
 			   "http://cmdb.ft.com/systems/next-video-editor": [
@@ -113,9 +113,9 @@ func TestReadConfig(t *testing.T) {
 			}`,
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": {
+					"http://cmdb.ft.com/systems/cct": {
 						{ContentType: ".*",
-							Collection: "methode",
+							Collection: "universal-content",
 						},
 					},
 					"http://cmdb.ft.com/systems/next-video-editor": {
@@ -151,11 +151,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 	}
 	c := &Configuration{
 		Config: map[string][]OriginSystemConfig{
-			"http://cmdb.ft.com/systems/methode-web-pub": {
-				{ContentType: ".*",
-					Collection: "methode",
-				},
-			},
 			"http://cmdb.ft.com/systems/next-video-editor": {
 				//{ContentType: "^(application/json).*$",
 				{ContentType: "application/json",
@@ -207,27 +202,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{
-			"methode json",
-			args{"http://cmdb.ft.com/systems/methode-web-pub",
-				"application/json"},
-			"methode",
-			false,
-		},
-		{
-			"methode null CT",
-			args{"http://cmdb.ft.com/systems/methode-web-pub",
-				""},
-			"methode",
-			false,
-		},
-		{
-			"methode",
-			args{"http://cmdb.ft.com/systems/methode-web-pub",
-				"anytype"},
-			"methode",
-			false,
-		},
 		{
 			"video wrong CT",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
@@ -423,14 +397,14 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 			false,
 		},
 		{
-			"methode null CT",
+			"pac null CT",
 			args{"http://cmdb.ft.com/systems/pac",
 				""},
 			"pac-metadata",
 			false,
 		},
 		{
-			"methode",
+			"pac",
 			args{"http://cmdb.ft.com/systems/pac",
 				"anytype"},
 			"pac-metadata",

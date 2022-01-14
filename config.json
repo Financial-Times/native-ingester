@@ -1,10 +1,4 @@
 {
-    "http://cmdb.ft.com/systems/methode-web-pub": [
-        {
-            "content_type": ".*",
-            "collection": "methode"
-        }
-    ],
     "http://cmdb.ft.com/systems/wordpress": [
         {
             "content_type": ".*",

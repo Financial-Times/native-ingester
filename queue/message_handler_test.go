@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	methodeOriginSystemID              = "http://cmdb.ft.com/systems/methode-web-pub"
-	methodeCollection                  = "methode"
+	cctOriginSystemID                  = "http://cmdb.ft.com/systems/cct"
+	universalContentCollection         = "universal-content"
 	contentType                        = "application/json; version=1.0"
 	messageTypeHeader                  = "Message-Type"
 	messageTypePartialContentPublished = "cms-partial-content-published"
@@ -23,7 +23,7 @@ var goodMsgHeaders = map[string]string{
 	"Content-Type":      contentType,
 	"X-Request-Id":      "tid_test",
 	"Message-Timestamp": "2017-02-16T12:56:16Z",
-	"Origin-System-Id":  methodeOriginSystemID,
+	"Origin-System-Id":  cctOriginSystemID,
 }
 
 var goodMsg = kafka.FTMessage{
@@ -42,8 +42,8 @@ func init() {
 
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", nil)
+	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 
@@ -57,8 +57,8 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", nil)
+	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(nil)
@@ -82,8 +82,8 @@ func TestWritePartialContentToNativeSuccessfullyWithForward(t *testing.T) {
 		Headers: goodMsgPartialUpdated.Headers,
 	}
 
-	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", updatedBody, nil)
+	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", updatedBody, nil)
 
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(nil)
@@ -112,7 +112,7 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 
 func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", methodeOriginSystemID, contentType).Return("", errors.New("Collection Not Found"))
+	w.On("GetCollection", cctOriginSystemID, contentType).Return("", errors.New("Collection Not Found"))
 
 	p := new(mocks.ProducerMock)
 
@@ -126,8 +126,8 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", errors.New("I do not want to write today!"))
+	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", errors.New("today I do not want to write"))
 
 	p := new(mocks.ProducerMock)
 
@@ -142,8 +142,8 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 func TestForwardFailBecauseOfProducer(t *testing.T) {
 	hook := logger.NewTestHook("native-ingester")
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", nil)
+	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(errors.New("Today, I am not writing on a queue."))
