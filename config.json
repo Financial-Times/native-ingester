@@ -1,10 +1,4 @@
 {
-    "http://cmdb.ft.com/systems/wordpress": [
-        {
-            "content_type": ".*",
-            "collection": "wordpress"
-        }
-    ],
     "http://cmdb.ft.com/systems/next-video-editor": [
         {
             "content_type": "^(application/json).*$",
