@@ -3,13 +3,14 @@ replicaCount: 1
 service:
   name: native-ingester-metadata
 env:
-  QUEUE_READ_GROUP: "nativeIngesterMetadata"
-  QUEUE_READ_TOPIC: "PreNativeCmsMetadataPublicationEvents"
+  CONSUMER_GROUP: "native-ingester-metadata"
+  CONSUMER_TOPIC: "PreNativeCmsMetadataPublicationEvents"
   NATIVE_CONTENT_UUID_FIELDS: "uuid,post.uuid,data.uuidv3,id"
   CONFIG: "config_metadata.json"
-  QUEUE_WRITE_TOPIC: "NativeCmsMetadataPublicationEvents"
+  PRODUCER_TOPIC: "NativeCmsMetadataPublicationEvents"
   CONTENT_TYPE: "Annotations"
   PANIC_GUIDE_URL: "https://runbooks.in.ft.com/native-ingester-metadata"
+  KAFKA_LAG_TOLERANCE: 500
 resources:
   requests:
     memory: 200Mi

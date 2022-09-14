@@ -3,7 +3,9 @@ package queue
 import (
 	"testing"
 
-	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/go-logger/v2"
+
+	"github.com/Financial-Times/kafka-client-go/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,22 +49,25 @@ func TestGetOriginSystemID(t *testing.T) {
 }
 
 func TestGetNativeMessageSuccessfully(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	pe := publicationEvent{aMsg}
-	_, err := pe.nativeMessage(nil)
+	_, err := pe.nativeMessage(log)
 
 	assert.NoError(t, err, "It should not return an error")
 }
 
 func TestGetNativeMessageFailBecauseBadBody(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	pe := publicationEvent{aMsgWithBadBody}
-	_, err := pe.nativeMessage(nil)
+	_, err := pe.nativeMessage(log)
 
 	assert.EqualError(t, err, "invalid character 'I' looking for beginning of value", "It should return an error")
 }
 
 func TestGetCNativeNativeMessageFailBecauseMissingTimstamp(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	pe := publicationEvent{aMsgWithoutTimestamp}
-	_, err := pe.nativeMessage(nil)
+	_, err := pe.nativeMessage(log)
 
 	assert.EqualError(t, err, "publish event does not contain timestamp", "It should return an error")
 }

@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/kafka-client-go/v3"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/stretchr/testify/mock"
 )
@@ -20,8 +20,9 @@ func (p *ProducerMock) SendMessage(msg kafka.FTMessage) error {
 	return args.Error(0)
 }
 
-func (p *ProducerMock) Shutdown() {
+func (p *ProducerMock) Close() error {
 	p.Called()
+	return nil
 }
 
 type ConsumerMock struct {
@@ -33,12 +34,18 @@ func (c *ConsumerMock) ConnectivityCheck() error {
 	return args.Error(0)
 }
 
-func (c *ConsumerMock) StartListening(messageHandler func(message kafka.FTMessage) error) {
+func (c *ConsumerMock) MonitorCheck() error {
+	args := c.Called()
+	return args.Error(0)
+}
+
+func (c *ConsumerMock) Start(messageHandler func(message kafka.FTMessage)) {
 	c.Called(messageHandler)
 }
 
-func (c *ConsumerMock) Shutdown() {
+func (c *ConsumerMock) Close() error {
 	c.Called()
+	return nil
 }
 
 type WriterMock struct {

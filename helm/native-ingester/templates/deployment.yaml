@@ -35,30 +35,29 @@ spec:
         env:
         - name: APP_NAME
           value: {{ .Values.service.name }}
-        - name: Q_READ_ADDR
+        - name: LOG_LEVEL
+          value: "{{ .Values.env.LOG_LEVEL }}"
+        - name: KAFKA_ADDRESS
           valueFrom:
             configMapKeyRef:
               name: global-config
-              key: zookeeper.url
+              key: msk.kafka.broker.url
         - name: CONFIG
           value: {{ .Values.env.CONFIG }}
-        - name: Q_READ_GROUP
-          value: {{ .Values.env.QUEUE_READ_GROUP }}
-        - name: Q_READ_TOPIC
-          value: {{ .Values.env.QUEUE_READ_TOPIC }}
+        - name: CONSUMER_GROUP
+          value: {{ .Values.env.CONSUMER_GROUP }}
+        - name: CONSUMER_TOPIC
+          value: {{ .Values.env.CONSUMER_TOPIC }}
         - name: NATIVE_CONTENT_UUID_FIELDS
           value: {{ .Values.env.NATIVE_CONTENT_UUID_FIELDS }}
         - name: CONTENT_TYPE
           value: {{ .Values.env.CONTENT_TYPE }}
         - name: NATIVE_RW_ADDRESS
           value: "http://nativerw:8080"
-        - name: Q_WRITE_ADDR
-          valueFrom:
-            configMapKeyRef:
-              name: global-config
-              key: kafka.url
-        - name: Q_WRITE_TOPIC
-          value: {{ .Values.env.QUEUE_WRITE_TOPIC }}
+        - name: PRODUCER_TOPIC
+          value: {{ .Values.env.PRODUCER_TOPIC }}
+        - name: KAFKA_LAG_TOLERANCE
+          value: "{{ .Values.env.KAFKA_LAG_TOLERANCE }}"
         - name: PANIC_GUIDE_URL
           value: {{ .Values.env.PANIC_GUIDE_URL }}
         ports:

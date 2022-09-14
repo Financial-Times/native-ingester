@@ -85,7 +85,6 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 
 	if request.Header.Get(contentTypeHeader) == "" {
 		log.
-			WithUUID(contentUUID).
 			Warn("Native-save request does not have content-type header, defaulting to application/json.")
 
 		request.Header.Set("Content-Type", "application/json")
@@ -94,7 +93,6 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 
 	if request.Header.Get(originSystemIDHeader) == "" {
 		log.
-			WithUUID(contentUUID).
 			Warn("Native-save request does not have Origin-System-ID header")
 	}
 	response, err := nw.httpClient.Do(request)
@@ -103,7 +101,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 		log.WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, "", err
 	}
-	defer properClose(msg.TransactionID(), response, log)
+	defer properClose(response, log)
 
 	if isNot2XXStatusCode(response.StatusCode) {
 		errMsg := "Native writer returned non-200 code"
@@ -118,7 +116,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	return contentUUID, updatedContent, nil
 }
 
-func properClose(tid string, resp *http.Response, log *logger.LogEntry) {
+func properClose(resp *http.Response, log *logger.LogEntry) {
 	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
 		log.WithError(err).Warn("Couldn't read response body")

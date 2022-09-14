@@ -2,17 +2,14 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/Financial-Times/go-logger/v2"
 
-	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/kafka-client-go/v3"
 	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/native-ingester/queue"
@@ -33,23 +30,35 @@ func main() {
 	})
 
 	// Read queue configuration
-	readQueueAddresses := app.String(cli.StringOpt{
-		Name:   "read-queue-addresses",
-		Value:  "",
-		Desc:   "Zookeeper addresses (host:port) to connect to the consumer queue.",
-		EnvVar: "Q_READ_ADDR",
+	kafkaAddress := app.String(cli.StringOpt{
+		Name:   "kafka-address",
+		Value:  "kafka:9092",
+		Desc:   "MSK address to connect to the producer and consumer queues.",
+		EnvVar: "KAFKA_ADDRESS",
 	})
-	readQueueGroup := app.String(cli.StringOpt{
-		Name:   "read-queue-group",
+	consumerGroup := app.String(cli.StringOpt{
+		Name:   "consumer-group",
 		Value:  "",
 		Desc:   "Group used to read the messages from the queue.",
-		EnvVar: "Q_READ_GROUP",
+		EnvVar: "CONSUMER_GROUP",
 	})
-	readQueueTopic := app.String(cli.StringOpt{
-		Name:   "read-queue-topic",
+	consumerTopic := app.String(cli.StringOpt{
+		Name:   "consumer-topic",
 		Value:  "",
 		Desc:   "The topic to read the messages from.",
-		EnvVar: "Q_READ_TOPIC",
+		EnvVar: "CONSUMER_TOPIC",
+	})
+	lagTolerance := app.Int(cli.IntOpt{
+		Name:   "lag-tolerance",
+		Value:  500,
+		Desc:   "Configured kafka consumer lag tolerance.",
+		EnvVar: "KAFKA_LAG_TOLERANCE",
+	})
+	producerTopic := app.String(cli.StringOpt{
+		Name:   "producer-topic",
+		Value:  "",
+		Desc:   "The topic to write the messages to.",
+		EnvVar: "PRODUCER_TOPIC",
 	})
 	// Native writer configuration
 	nativeWriterAddress := app.String(cli.StringOpt{
@@ -63,19 +72,6 @@ func main() {
 		Value:  []string{},
 		Desc:   "List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3",
 		EnvVar: "NATIVE_CONTENT_UUID_FIELDS",
-	})
-	// Write Queue configuration
-	writeQueueAddress := app.String(cli.StringOpt{
-		Name:   "write-queue-address",
-		Value:  "",
-		Desc:   "Kafka address (host:port) to connect to the producer queue.",
-		EnvVar: "Q_WRITE_ADDR",
-	})
-	writeQueueTopic := app.String(cli.StringOpt{
-		Name:   "write-topic",
-		Value:  "",
-		Desc:   "The topic to write the messages to.",
-		EnvVar: "Q_WRITE_TOPIC",
 	})
 	contentType := app.String(cli.StringOpt{
 		Name:   "content-type",
@@ -126,22 +122,31 @@ func main() {
 
 		mh := queue.NewMessageHandler(writer, *contentType, logger)
 
-		var messageProducer kafka.Producer
-		if *writeQueueAddress != "" {
-			messageProducer, err = kafka.NewPerseverantProducer(*writeQueueAddress, *writeQueueTopic, nil, 0, time.Minute)
-			if err != nil {
-				logger.WithError(err).Errorf("unable to create producer for %v/%v", *writeQueueAddress, *writeQueueTopic)
+		var messageProducer *kafka.Producer
+		if *producerTopic != "" {
+			producerConfig := kafka.ProducerConfig{
+				BrokersConnectionString: *kafkaAddress,
+				Topic:                   *producerTopic,
+				Options:                 kafka.DefaultProducerOptions(),
 			}
+
+			messageProducer = kafka.NewProducer(producerConfig, logger)
+
 			logger.Infof("[Startup] Producer: %# v", messageProducer)
 			mh.ForwardTo(messageProducer)
 		}
 
-		consumerConfig := kafka.DefaultConsumerConfig()
-		consumerConfig.Zookeeper.Logger = log.New(ioutil.Discard, "", 0)
-		messageConsumer, err := kafka.NewPerseverantConsumer(*readQueueAddresses, *readQueueGroup, []string{*readQueueTopic}, consumerConfig, time.Minute, nil)
-		if err != nil {
-			logger.WithError(err).Errorf("unable to create message consumer for %v/%v", *readQueueAddresses, *readQueueTopic)
+		consumerConfig := kafka.ConsumerConfig{
+			BrokersConnectionString: *kafkaAddress,
+			ConsumerGroup:           *consumerGroup,
+			Options:                 kafka.DefaultConsumerOptions(),
 		}
+
+		kafkaTopic := []*kafka.Topic{
+			kafka.NewTopic(*consumerTopic, kafka.WithLagTolerance(int64(*lagTolerance))),
+		}
+
+		messageConsumer := kafka.NewConsumer(consumerConfig, kafkaTopic, logger)
 
 		logger.Infof("[Startup] Consumer: %# v", messageConsumer)
 		logger.Infof("[Startup] Using native writer configuration: %# v", writer)
@@ -165,7 +170,7 @@ func main() {
 	}
 }
 
-func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Producer, nw native.Writer, pg string) error {
+func enableHealthCheck(port string, consumer *kafka.Consumer, producer *kafka.Producer, nw native.Writer, pg string) error {
 	hc := resources.NewHealthCheck(consumer, producer, nw, pg)
 
 	r := mux.NewRouter()
@@ -178,11 +183,11 @@ func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Prod
 	return http.ListenAndServe(":"+port, nil)
 }
 
-func startMessageConsumption(messageConsumer kafka.Consumer, mh func(message kafka.FTMessage) error) {
-	messageConsumer.StartListening(mh)
+func startMessageConsumption(messageConsumer *kafka.Consumer, mh func(message kafka.FTMessage)) {
+	messageConsumer.Start(mh)
 
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
-	messageConsumer.Shutdown()
+	messageConsumer.Close()
 }
