@@ -48,21 +48,21 @@ func TestGetOriginSystemID(t *testing.T) {
 
 func TestGetNativeMessageSuccessfully(t *testing.T) {
 	pe := publicationEvent{aMsg}
-	_, err := pe.nativeMessage()
+	_, err := pe.nativeMessage(nil)
 
 	assert.NoError(t, err, "It should not return an error")
 }
 
 func TestGetNativeMessageFailBecauseBadBody(t *testing.T) {
 	pe := publicationEvent{aMsgWithBadBody}
-	_, err := pe.nativeMessage()
+	_, err := pe.nativeMessage(nil)
 
 	assert.EqualError(t, err, "invalid character 'I' looking for beginning of value", "It should return an error")
 }
 
 func TestGetCNativeNativeMessageFailBecauseMissingTimstamp(t *testing.T) {
 	pe := publicationEvent{aMsgWithoutTimestamp}
-	_, err := pe.nativeMessage()
+	_, err := pe.nativeMessage(nil)
 
 	assert.EqualError(t, err, "publish event does not contain timestamp", "It should return an error")
 }

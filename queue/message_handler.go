@@ -3,7 +3,7 @@ package queue
 import (
 	"fmt"
 
-	"github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/native"
 )
@@ -14,22 +14,23 @@ type MessageHandler struct {
 	producer    kafka.Producer
 	forwards    bool
 	contentType string
+	logger      *logger.UPPLogger
 }
 
 // NewMessageHandler returns a new instance of MessageHandler
-func NewMessageHandler(w native.Writer, contentType string) *MessageHandler {
-	return &MessageHandler{writer: w, contentType: contentType}
+func NewMessageHandler(w native.Writer, contentType string, logger *logger.UPPLogger) *MessageHandler {
+	return &MessageHandler{writer: w, contentType: contentType, logger: logger}
 }
 
 // HandleMessage implements the strategy for handling message from a queue
 func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 	pubEvent := publicationEvent{msg}
 
-	logger.NewEntry(pubEvent.transactionID()).WithField("Content-Type", pubEvent.contentType()).Infof("Handling new message with headers: %v", pubEvent.Headers)
+	mh.logger.WithTransactionID(pubEvent.transactionID()).WithField("Content-Type", pubEvent.contentType()).Infof("Handling new message with headers: %v", pubEvent.Headers)
 
-	writerMsg, err := pubEvent.nativeMessage()
+	writerMsg, err := pubEvent.nativeMessage(mh.logger)
 	if err != nil {
-		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
+		mh.logger.WithMonitoringEvent("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithError(err).
 			Error("Error unmarshalling content body from publication event. Ignoring message.")
 		return err
@@ -37,7 +38,7 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 
 	collection, err := mh.writer.GetCollection(pubEvent.originSystemID(), writerMsg.ContentType())
 	if err != nil {
-		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
+		mh.logger.WithMonitoringEvent("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithValidFlag(false).
 			Warn(fmt.Sprintf("Skipping content because of not whitelisted combination (Origin-System-Id, Content-Type): (%s, %s)", pubEvent.originSystemID(), writerMsg.ContentType()))
 		return nil
@@ -45,7 +46,7 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 
 	contentUUID, updatedContent, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
 	if writerErr != nil {
-		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
+		mh.logger.WithMonitoringEvent("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithError(writerErr).
 			Error("Failed to write native content")
 		return err
@@ -57,16 +58,16 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 			pubEvent.Body = updatedContent
 		}
 
-		logger.NewEntry(pubEvent.transactionID()).Info("Forwarding consumed message to different queue")
+		mh.logger.WithTransactionID(pubEvent.transactionID()).Info("Forwarding consumed message to different queue")
 		forwardErr := mh.producer.SendMessage(pubEvent.producerMsg())
 		if forwardErr != nil {
-			logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
+			mh.logger.WithMonitoringEvent("Ingest", pubEvent.transactionID(), mh.contentType).
 				WithUUID(contentUUID).
 				WithError(forwardErr).
 				Error("Failed to forward consumed message to a different queue")
 			return forwardErr
 		}
-		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
+		mh.logger.WithMonitoringEvent("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithUUID(contentUUID).
 			Info("Successfully ingested")
 	}

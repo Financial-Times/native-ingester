@@ -10,7 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	logger "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/go-logger/v2"
+
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/native-ingester/native"
@@ -100,32 +101,38 @@ func main() {
 		Desc:   "Panic Guide URL",
 		EnvVar: "PANIC_GUIDE_URL",
 	})
+	logLevel := app.String(cli.StringOpt{
+		Name:   "logLevel",
+		Value:  "INFO",
+		Desc:   "Log level for the service",
+		EnvVar: "LOG_LEVEL",
+	})
 
 	app.Action = func() {
-		logger.InitDefaultLogger(*appName)
+		logger := logger.NewUPPLogger(*appName, *logLevel)
 		conf, err := config.ReadConfig(*configFile)
 		if err != nil {
-			logger.Fatalf(nil, err, "Error reading the configuration")
+			logger.WithError(err).Fatal("Error reading the configuration")
 		}
 
 		if *panicGuideUrl == "" {
-			logger.Fatalf(nil, errors.New("empty panicGuideUrl"), "Incorrect usage")
+			logger.WithError(errors.New("empty panicGuideUrl")).Fatalf("Incorrect usage")
 		}
 
-		logger.Infof(nil, "[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
+		logger.Infof("[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
-		writer := native.NewWriter(*nativeWriterAddress, *conf, bodyParser)
-		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
+		writer := native.NewWriter(*nativeWriterAddress, *conf, bodyParser, logger)
+		logger.Infof("[Startup] Using native writer configuration: %# v", writer)
 
-		mh := queue.NewMessageHandler(writer, *contentType)
+		mh := queue.NewMessageHandler(writer, *contentType, logger)
 
 		var messageProducer kafka.Producer
 		if *writeQueueAddress != "" {
 			messageProducer, err = kafka.NewPerseverantProducer(*writeQueueAddress, *writeQueueTopic, nil, 0, time.Minute)
 			if err != nil {
-				logger.Errorf(nil, err, "unable to create producer for %v/%v", *writeQueueAddress, *writeQueueTopic)
+				logger.WithError(err).Errorf("unable to create producer for %v/%v", *writeQueueAddress, *writeQueueTopic)
 			}
-			logger.Infof(nil, "[Startup] Producer: %# v", messageProducer)
+			logger.Infof("[Startup] Producer: %# v", messageProducer)
 			mh.ForwardTo(messageProducer)
 		}
 
@@ -133,17 +140,22 @@ func main() {
 		consumerConfig.Zookeeper.Logger = log.New(ioutil.Discard, "", 0)
 		messageConsumer, err := kafka.NewPerseverantConsumer(*readQueueAddresses, *readQueueGroup, []string{*readQueueTopic}, consumerConfig, time.Minute, nil)
 		if err != nil {
-			logger.Errorf(nil, err, "unable to create message consumer for %v/%v", *readQueueAddresses, *readQueueTopic)
+			logger.WithError(err).Errorf("unable to create message consumer for %v/%v", *readQueueAddresses, *readQueueTopic)
 		}
 
-		logger.Infof(nil, "[Startup] Consumer: %# v", messageConsumer)
-		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
-		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", *contentUUIDfields)
+		logger.Infof("[Startup] Consumer: %# v", messageConsumer)
+		logger.Infof("[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
 		if messageProducer != nil {
-			logger.Infof(map[string]interface{}{}, "[Startup] Producer: %# v", messageProducer)
+			logger.Infof("[Startup] Producer: %# v", messageProducer)
 		}
 
-		go enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl)
+		go func() {
+			err = enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl)
+			if err != nil {
+				logger.WithError(err).Fatal("Couldn't set up HTTP listener")
+			}
+		}()
 		startMessageConsumption(messageConsumer, mh.HandleMessage)
 	}
 
@@ -153,7 +165,7 @@ func main() {
 	}
 }
 
-func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Producer, nw native.Writer, pg string) {
+func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Producer, nw native.Writer, pg string) error {
 	hc := resources.NewHealthCheck(consumer, producer, nw, pg)
 
 	r := mux.NewRouter()
@@ -163,10 +175,7 @@ func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Prod
 	r.HandleFunc(httphandlers.PingPath, httphandlers.PingHandler).Methods("GET")
 
 	http.Handle("/", r)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		logger.Fatalf(nil, err, "Couldn't set up HTTP listener")
-	}
+	return http.ListenAndServe(":"+port, nil)
 }
 
 func startMessageConsumption(messageConsumer kafka.Consumer, mh func(message kafka.FTMessage) error) {
