@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/service-status-go/httphandlers"
 )
@@ -37,12 +37,13 @@ type nativeWriter struct {
 	collections config.Configuration
 	httpClient  http.Client
 	bodyParser  ContentBodyParser
+	logger      *logger.UPPLogger
 }
 
 // NewWriter returns a new instance of a native writer
-func NewWriter(address string, collectionsOriginIdsMap config.Configuration, parser ContentBodyParser) Writer {
+func NewWriter(address string, collectionsOriginIdsMap config.Configuration, parser ContentBodyParser, logger *logger.UPPLogger) Writer {
 	collections := collectionsOriginIdsMap
-	return &nativeWriter{address, collections, http.Client{}, parser}
+	return &nativeWriter{address, collections, http.Client{}, parser, logger}
 }
 
 func (nw *nativeWriter) GetCollection(originID string, contentType string) (string, error) {
@@ -51,15 +52,18 @@ func (nw *nativeWriter) GetCollection(originID string, contentType string) (stri
 
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, string, error) {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
+
+	log := nw.logger.WithTransactionID(msg.TransactionID()).WithUUID(contentUUID)
+
 	if err != nil {
-		logger.NewEntry(msg.TransactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
+		log.WithError(err).Error("Error extracting uuid. Ignoring message.")
 		return contentUUID, "", err
 	}
-	logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).Info("Start processing native publish event")
+	log.Info("Start processing native publish event")
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error marshalling message")
+		log.WithError(err).Error("Error marshalling message")
 		return contentUUID, "", err
 	}
 
@@ -71,7 +75,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	}
 	request, err := http.NewRequest(httpMethod, requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
+		log.WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, "", err
 	}
 
@@ -80,8 +84,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	}
 
 	if request.Header.Get(contentTypeHeader) == "" {
-		logger.NewEntry(msg.TransactionID()).
-			WithUUID(contentUUID).
+		log.
 			Warn("Native-save request does not have content-type header, defaulting to application/json.")
 
 		request.Header.Set("Content-Type", "application/json")
@@ -89,39 +92,38 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	}
 
 	if request.Header.Get(originSystemIDHeader) == "" {
-		logger.NewEntry(msg.TransactionID()).
-			WithUUID(contentUUID).
+		log.
 			Warn("Native-save request does not have Origin-System-ID header")
 	}
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
+		log.WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, "", err
 	}
-	defer properClose(msg.TransactionID(), response)
+	defer properClose(response, log)
 
 	if isNot2XXStatusCode(response.StatusCode) {
 		errMsg := "Native writer returned non-200 code"
 		err := errors.New(errMsg)
-		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error(errMsg)
+		log.WithError(err).Error(errMsg)
 		return contentUUID, "", err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	updatedContent := string(body)
-	logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).Info("Successfully finished processing native publish event")
+	log.Info("Successfully finished processing native publish event")
 	return contentUUID, updatedContent, nil
 }
 
-func properClose(tid string, resp *http.Response) {
+func properClose(resp *http.Response, log *logger.LogEntry) {
 	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
-		logger.NewEntry(tid).WithError(err).Warn("Couldn't read response body")
+		log.WithError(err).Warn("Couldn't read response body")
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		logger.NewEntry(tid).WithError(err).Warn("Couldn't close response body")
+		log.WithError(err).Warn("Couldn't close response body")
 	}
 }
 

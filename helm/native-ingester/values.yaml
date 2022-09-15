@@ -10,8 +10,9 @@ image:
   pullPolicy: IfNotPresent
 env:
   CONFIG: "" # This should be defined in the specific app-configs folder
-  QUEUE_READ_GROUP: "" # This should be defined in the specific app-configs folder
-  QUEUE_READ_TOPIC: "" # This should be defined in the specific app-configs folder
+  CONSUMER_GROUP: "" # This should be defined in the specific app-configs folder
+  CONSUMER_TOPIC: "" # This should be defined in the specific app-configs folder
   NATIVE_CONTENT_UUID_FIELDS: "" # This should be defined in the specific app-configs folder
-  QUEUE_WRITE_TOPIC: "" # This should be defined in the specific app-configs folder
+  PRODUCER_TOPIC: "" # This should be defined in the specific app-configs folder
   PANIC_GUIDE_URL: "" # This should be defined in the specific app-configs folder
+  LOG_LEVEL: "INFO"

@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Financial-Times/kafka-client-go/v3"
+
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
-	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/service-status-go/gtg"
 )
@@ -13,13 +14,22 @@ import (
 // HealthCheck implements the healthcheck for the native ingester
 type HealthCheck struct {
 	writer     native.Writer
-	consumer   kafka.Consumer
-	producer   kafka.Producer
+	consumer   kafkaConsumer
+	producer   kafkaProducer
 	panicGuide string
 }
 
+type kafkaConsumer interface {
+	ConnectivityCheck() error
+	MonitorCheck() error
+}
+
+type kafkaProducer interface {
+	ConnectivityCheck() error
+}
+
 // NewHealthCheck return a new instance of a native ingester HealthCheck
-func NewHealthCheck(c kafka.Consumer, p kafka.Producer, nw native.Writer, pg string) *HealthCheck {
+func NewHealthCheck(c kafkaConsumer, p kafkaProducer, nw native.Writer, pg string) *HealthCheck {
 	return &HealthCheck{
 		writer:     nw,
 		consumer:   c,
@@ -37,6 +47,18 @@ func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 		Severity:         2,
 		TechnicalSummary: "Consumer message queue is not reachable/healthy",
 		Checker:          check(hc.consumer.ConnectivityCheck),
+	}
+}
+
+func (hc *HealthCheck) consumerMonitorCheck() fthealth.Check {
+	return fthealth.Check{
+		ID:               "consumer-lag-check",
+		BusinessImpact:   "Native content or metadata publishing is slowed down.",
+		Name:             "ConsumerMonitorCheck",
+		PanicGuide:       hc.panicGuide,
+		Severity:         3,
+		TechnicalSummary: kafka.LagTechnicalSummary,
+		Checker:          check(hc.consumer.MonitorCheck),
 	}
 }
 
@@ -78,7 +100,7 @@ func check(fn func() error) func() (string, error) {
 
 //Handler returns the HTTP handler of the healthcheck
 func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) {
-	checks := []fthealth.Check{hc.consumerQueueCheck(), hc.nativeWriterCheck()}
+	checks := []fthealth.Check{hc.consumerQueueCheck(), hc.nativeWriterCheck(), hc.consumerMonitorCheck()}
 	if hc.producer != nil {
 		checks = append(checks, hc.producerQueueCheck())
 	}

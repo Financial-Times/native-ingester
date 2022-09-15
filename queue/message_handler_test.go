@@ -1,11 +1,12 @@
 package queue
 
 import (
+	"bytes"
 	"errors"
 	"testing"
 
-	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/kafka-client-go/v3"
 	"github.com/Financial-Times/native-ingester/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,18 +37,15 @@ var badBodyMsg = kafka.FTMessage{
 	Headers: goodMsgHeaders,
 }
 
-func init() {
-	logger.InitDefaultLogger("native-ingester")
-}
-
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.producer = p
 	mh.HandleMessage(goodMsg)
 
@@ -56,6 +54,7 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 }
 
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
@@ -63,7 +62,7 @@ func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(nil)
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
@@ -72,6 +71,7 @@ func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 }
 
 func TestWritePartialContentToNativeSuccessfullyWithForward(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
 	updatedBody := "updated"
 	goodMsgPartialUpdated := goodMsg
@@ -88,7 +88,7 @@ func TestWritePartialContentToNativeSuccessfullyWithForward(t *testing.T) {
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(nil)
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsgPartialUpdated)
 
@@ -98,11 +98,12 @@ func TestWritePartialContentToNativeSuccessfullyWithForward(t *testing.T) {
 }
 
 func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
 
 	p := new(mocks.ProducerMock)
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.ForwardTo(p)
 	mh.HandleMessage(badBodyMsg)
 
@@ -111,12 +112,13 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 }
 
 func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", cctOriginSystemID, contentType).Return("", errors.New("Collection Not Found"))
 
 	p := new(mocks.ProducerMock)
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
@@ -125,13 +127,14 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 }
 
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
+	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", errors.New("today I do not want to write"))
 
 	p := new(mocks.ProducerMock)
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
@@ -140,7 +143,11 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 }
 
 func TestForwardFailBecauseOfProducer(t *testing.T) {
-	hook := logger.NewTestHook("native-ingester")
+	log := logger.NewUnstructuredLogger()
+	var buf bytes.Buffer
+	hook := logger.NewUnstructuredLogger()
+	hook.SetOutput(&buf)
+
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
@@ -148,12 +155,12 @@ func TestForwardFailBecauseOfProducer(t *testing.T) {
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(errors.New("Today, I am not writing on a queue."))
 
-	mh := NewMessageHandler(w, contentType)
+	mh := NewMessageHandler(w, contentType, log)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
 	w.AssertExpectations(t)
 	p.AssertExpectations(t)
-	assert.Equal(t, "error", hook.LastEntry().Level.String())
-	assert.Equal(t, "Failed to forward consumed message to a different queue", hook.LastEntry().Message)
+	assert.Contains(t, "error", buf.String())
+	assert.Contains(t, "Failed to forward consumed message to a different queue", buf.String())
 }

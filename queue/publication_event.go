@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/kafka-client-go/v3"
 	"github.com/Financial-Times/native-ingester/native"
 )
 
@@ -30,8 +30,7 @@ func (pe *publicationEvent) messageType() string {
 }
 
 // nativeMessage given a kafka message, extracts useful headers and body to adds them into a new NativeMessage struct.
-func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
-
+func (pe *publicationEvent) nativeMessage(log *logger.UPPLogger) (native.NativeMessage, error) {
 	timestamp, found := pe.Headers["Message-Timestamp"]
 	if !found {
 		return native.NativeMessage{}, errors.New("publish event does not contain timestamp")
@@ -64,7 +63,7 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 	if found {
 		msg.AddContentRevision(contentRevision)
 	}
-	logger.NewEntry(pe.transactionID()).
+	log.WithTransactionID(pe.transactionID()).
 		WithField("Content-Type", msg.ContentType()).
 		WithField("Origin-System-Id", msg.OriginSystemID()).
 		WithField("X-Content-Revision", msg.ContentRevision()).
