@@ -43,6 +43,18 @@
         {
             "content_type": "^(application/)*(vnd.ft-upp-live-event).*$",
             "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-image).*$",
+            "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-image-set).*$",
+            "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-graphic).*$",
+            "collection": "universal-content"
         }
     ]
 }
