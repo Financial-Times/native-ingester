@@ -2,6 +2,7 @@
 replicaCount: 1
 service:
   name: native-ingester-metadata
+  accountName: eksctl-native-ingester-serviceaccount
 env:
   CONSUMER_GROUP: "native-ingester-metadata"
   CONSUMER_TOPIC: "PreNativeCmsMetadataPublicationEvents"

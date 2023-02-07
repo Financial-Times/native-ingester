@@ -2,6 +2,7 @@
 replicaCount: 1
 service:
   name: native-ingester-cms
+  accountName: eksctl-native-ingester-serviceaccount
 env:
   CONSUMER_GROUP: "native-ingester-cms"
   CONSUMER_TOPIC: "PreNativeCmsPublicationEvents"
