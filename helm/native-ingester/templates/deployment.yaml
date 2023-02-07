@@ -37,6 +37,11 @@ spec:
           value: {{ .Values.service.name }}
         - name: LOG_LEVEL
           value: "{{ .Values.env.LOG_LEVEL }}"
+        - name: KAFKA_CLUSTER_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
+              key: msk.kafka.cluster.arn
         - name: KAFKA_ADDRESS
           valueFrom:
             configMapKeyRef:

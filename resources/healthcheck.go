@@ -4,9 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Financial-Times/kafka-client-go/v3"
-
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	"github.com/Financial-Times/kafka-client-go/v4"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/service-status-go/gtg"
 )
@@ -98,7 +97,7 @@ func check(fn func() error) func() (string, error) {
 	}
 }
 
-//Handler returns the HTTP handler of the healthcheck
+// Handler returns the HTTP handler of the healthcheck
 func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) {
 	checks := []fthealth.Check{hc.consumerQueueCheck(), hc.nativeWriterCheck(), hc.consumerMonitorCheck()}
 	if hc.producer != nil {
