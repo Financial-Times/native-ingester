@@ -5,6 +5,7 @@ import (
 	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/kafka-client-go/v4"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/service-status-go/gtg"
@@ -16,6 +17,7 @@ type HealthCheck struct {
 	consumer   kafkaConsumer
 	producer   kafkaProducer
 	panicGuide string
+	logger     *logger.UPPLogger
 }
 
 type kafkaConsumer interface {
@@ -28,12 +30,13 @@ type kafkaProducer interface {
 }
 
 // NewHealthCheck return a new instance of a native ingester HealthCheck
-func NewHealthCheck(c kafkaConsumer, p kafkaProducer, nw native.Writer, pg string) *HealthCheck {
+func NewHealthCheck(consumer kafkaConsumer, producer kafkaProducer, writer native.Writer, panicGuide string, logger *logger.UPPLogger) *HealthCheck {
 	return &HealthCheck{
-		writer:     nw,
-		consumer:   c,
-		producer:   p,
-		panicGuide: pg,
+		writer:     writer,
+		consumer:   consumer,
+		producer:   producer,
+		panicGuide: panicGuide,
+		logger:     logger,
 	}
 }
 
@@ -45,7 +48,7 @@ func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 		PanicGuide:       hc.panicGuide,
 		Severity:         2,
 		TechnicalSummary: "Consumer message queue is not reachable/healthy",
-		Checker:          check(hc.consumer.ConnectivityCheck),
+		Checker:          check(hc.consumer.ConnectivityCheck, hc.logger, "Consumer connectivity"),
 	}
 }
 
@@ -57,7 +60,7 @@ func (hc *HealthCheck) consumerMonitorCheck() fthealth.Check {
 		PanicGuide:       hc.panicGuide,
 		Severity:         3,
 		TechnicalSummary: kafka.LagTechnicalSummary,
-		Checker:          check(hc.consumer.MonitorCheck),
+		Checker:          check(hc.consumer.MonitorCheck, hc.logger, "Consumer status"),
 	}
 }
 
@@ -69,7 +72,7 @@ func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 		PanicGuide:       hc.panicGuide,
 		Severity:         2,
 		TechnicalSummary: "Producer message queue is not reachable/healthy",
-		Checker:          check(hc.producer.ConnectivityCheck),
+		Checker:          check(hc.producer.ConnectivityCheck, hc.logger, "Producer connectivity"),
 	}
 }
 
@@ -85,15 +88,14 @@ func (hc *HealthCheck) nativeWriterCheck() fthealth.Check {
 	}
 }
 
-func check(fn func() error) func() (string, error) {
+func check(fn func() error, logger *logger.UPPLogger, component string) func() (string, error) {
 	return func() (string, error) {
-		msg := "OK"
-		err := fn()
-		if err != nil {
-			msg = err.Error()
+		if err := fn(); err != nil {
+			logger.WithError(err).Errorf("%s healthcheck failed", component)
+			return "", err
 		}
 
-		return msg, err
+		return "OK", nil
 	}
 }
 
@@ -119,7 +121,7 @@ func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) 
 
 func (hc *HealthCheck) GTG() gtg.Status {
 	consumerCheck := func() gtg.Status {
-		return gtgCheck(hc.consumer.ConnectivityCheck)
+		return gtgCheck(hc.consumer.ConnectivityCheck, hc.logger, "Consumer")
 	}
 
 	writerCheck := func() gtg.Status {
@@ -128,7 +130,7 @@ func (hc *HealthCheck) GTG() gtg.Status {
 
 	if hc.producer != nil {
 		producerCheck := func() gtg.Status {
-			return gtgCheck(hc.producer.ConnectivityCheck)
+			return gtgCheck(hc.producer.ConnectivityCheck, hc.logger, "Producer")
 		}
 		return gtg.FailFastParallelCheck([]gtg.StatusChecker{consumerCheck, producerCheck, writerCheck})()
 	}
@@ -136,8 +138,9 @@ func (hc *HealthCheck) GTG() gtg.Status {
 	return gtg.FailFastParallelCheck([]gtg.StatusChecker{consumerCheck, writerCheck})()
 }
 
-func gtgCheck(handler func() error) gtg.Status {
+func gtgCheck(handler func() error, logger *logger.UPPLogger, component string) gtg.Status {
 	if err := handler(); err != nil {
+		logger.WithError(err).Errorf("%s GTG check failed", component)
 		return gtg.Status{GoodToGo: false, Message: err.Error()}
 	}
 	return gtg.Status{GoodToGo: true}

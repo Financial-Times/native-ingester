@@ -162,7 +162,7 @@ func main() {
 		logger.Infof("[Startup] Consumer: %#v", messageConsumer)
 
 		go func() {
-			err = enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl)
+			err = enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl, logger)
 			if err != nil {
 				logger.WithError(err).Fatal("Couldn't set up HTTP listener")
 			}
@@ -182,8 +182,8 @@ func main() {
 	}
 }
 
-func enableHealthCheck(port string, consumer *kafka.Consumer, producer *kafka.Producer, nw native.Writer, pg string) error {
-	hc := resources.NewHealthCheck(consumer, producer, nw, pg)
+func enableHealthCheck(port string, consumer *kafka.Consumer, producer *kafka.Producer, writer native.Writer, panicGuide string, logger *logger.UPPLogger) error {
+	hc := resources.NewHealthCheck(consumer, producer, writer, panicGuide, logger)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/__health", hc.Handler())
