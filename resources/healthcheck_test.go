@@ -19,7 +19,7 @@ func TestNewHealthCheckWithoutProducer(t *testing.T) {
 	}
 
 	consumerConfig := kafka.ConsumerConfig{
-		BrokersConnectionString: "kafka:9092",
+		BrokersConnectionString: "localhost:29092",
 		ConsumerGroup:           "testGroup",
 		Options:                 kafka.DefaultConsumerOptions(),
 	}
@@ -47,7 +47,7 @@ func TestNewHealthCheckWithProducer(t *testing.T) {
 	}
 
 	consumerConfig := kafka.ConsumerConfig{
-		BrokersConnectionString: "kafka:9092",
+		BrokersConnectionString: "localhost:29092",
 		ConsumerGroup:           "testGroup",
 		Options:                 kafka.DefaultConsumerOptions(),
 	}
@@ -60,7 +60,7 @@ func TestNewHealthCheckWithProducer(t *testing.T) {
 	require.NoError(t, err)
 
 	producerConfig := kafka.ProducerConfig{
-		BrokersConnectionString: "kafka:9092",
+		BrokersConnectionString: "localhost:29092",
 		Topic:                   "testProducerTopic",
 		Options:                 kafka.DefaultProducerOptions(),
 	}
