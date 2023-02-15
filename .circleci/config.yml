@@ -11,9 +11,15 @@ jobs:
         environment:
           CIRCLE_TEST_REPORTS: /tmp/test-results
           CIRCLE_COVERAGE_REPORT: /tmp/coverage-results
-      - image: blacktop/kafka:0.8
+      - image: confluentinc/cp-zookeeper:6.2.4
         environment:
-          KAFKA_BROKER_ID: 1
+          ZOOKEEPER_CLIENT_PORT: 2181
+      - image: confluentinc/cp-kafka:6.2.4
+        environment:
+          KAFKA_ZOOKEEPER_CONNECT: localhost:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:29092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_CREATE_TOPICS: "testTopic:1:1"
     steps:
       - checkout
       - ft-golang-ci/build
