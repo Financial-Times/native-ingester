@@ -28,6 +28,7 @@ spec:
                 values:
                 - {{ .Values.service.name }}
             topologyKey: "kubernetes.io/hostname"
+      serviceAccountName: {{ .Values.service.accountName }}
       containers:
       - name: {{ .Values.service.name }}
         image: "{{ .Values.image.repository }}:{{ .Chart.Version }}"
@@ -37,6 +38,11 @@ spec:
           value: {{ .Values.service.name }}
         - name: LOG_LEVEL
           value: "{{ .Values.env.LOG_LEVEL }}"
+        - name: KAFKA_CLUSTER_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
+              key: msk.kafka.cluster.arn
         - name: KAFKA_ADDRESS
           valueFrom:
             configMapKeyRef:

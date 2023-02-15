@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/Financial-Times/go-logger/v2"
-
-	"github.com/Financial-Times/kafka-client-go/v3"
+	"github.com/Financial-Times/kafka-client-go/v4"
 	"github.com/Financial-Times/native-ingester/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewHealthCheckWithoutProducer(t *testing.T) {
@@ -28,10 +28,11 @@ func TestNewHealthCheckWithoutProducer(t *testing.T) {
 		kafka.NewTopic("testTopic", kafka.WithLagTolerance(int64(500))),
 	}
 
-	c := kafka.NewConsumer(consumerConfig, kafkaTopic, log)
+	consumer, err := kafka.NewConsumer(consumerConfig, kafkaTopic, log)
+	require.NoError(t, err)
 
 	nw := new(mocks.WriterMock)
-	hc := NewHealthCheck(c, nil, nw, "http://test-panic-guide.com")
+	hc := NewHealthCheck(consumer, nil, nw, "http://test-panic-guide.com", log)
 
 	assert.Nil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
@@ -55,7 +56,8 @@ func TestNewHealthCheckWithProducer(t *testing.T) {
 		kafka.NewTopic("testTopic", kafka.WithLagTolerance(int64(500))),
 	}
 
-	c := kafka.NewConsumer(consumerConfig, kafkaTopic, log)
+	consumer, err := kafka.NewConsumer(consumerConfig, kafkaTopic, log)
+	require.NoError(t, err)
 
 	producerConfig := kafka.ProducerConfig{
 		BrokersConnectionString: "kafka:9092",
@@ -63,10 +65,11 @@ func TestNewHealthCheckWithProducer(t *testing.T) {
 		Options:                 kafka.DefaultProducerOptions(),
 	}
 
-	p := kafka.NewProducer(producerConfig, log)
+	producer, err := kafka.NewProducer(producerConfig)
+	require.NoError(t, err)
 
 	nw := new(mocks.WriterMock)
-	hc := NewHealthCheck(c, p, nw, "http://test-panic-guide.com")
+	hc := NewHealthCheck(consumer, producer, nw, "http://test-panic-guide.com", log)
 
 	assert.NotNil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
@@ -132,6 +135,7 @@ func TestUnhappyConsumerHealthCheckWithoutProducer(t *testing.T) {
 	hc := HealthCheck{
 		consumer: c,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
@@ -155,6 +159,7 @@ func TestUnhappyConsumerMonitorHealthCheckWithoutProducer(t *testing.T) {
 	hc := HealthCheck{
 		consumer: c,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
@@ -182,6 +187,7 @@ func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
@@ -205,6 +211,7 @@ func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
 	hc := HealthCheck{
 		consumer: c,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
@@ -231,6 +238,7 @@ func TestUnhappyNativeWriterHealthCheckWithProducer(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
@@ -257,6 +265,7 @@ func TestUnhappyProducerHealthCheck(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
@@ -280,6 +289,7 @@ func TestHappyGTGCheckWithoutProducer(t *testing.T) {
 	hc := HealthCheck{
 		consumer: c,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()
@@ -300,6 +310,7 @@ func TestHappyGTGCheckWithProducer(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()
@@ -317,6 +328,7 @@ func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
 	hc := HealthCheck{
 		consumer: c,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()
@@ -337,6 +349,7 @@ func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()
@@ -354,6 +367,7 @@ func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
 	hc := HealthCheck{
 		consumer: c,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()
@@ -374,6 +388,7 @@ func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()
@@ -394,6 +409,7 @@ func TestUnhappyGTGCheck(t *testing.T) {
 		consumer: c,
 		producer: p,
 		writer:   nw,
+		logger:   logger.NewUnstructuredLogger(),
 	}
 
 	status := hc.GTG()

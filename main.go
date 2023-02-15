@@ -1,15 +1,13 @@
 package main
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/Financial-Times/go-logger/v2"
-
-	"github.com/Financial-Times/kafka-client-go/v3"
+	"github.com/Financial-Times/kafka-client-go/v4"
 	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/native-ingester/queue"
@@ -30,6 +28,11 @@ func main() {
 	})
 
 	// Read queue configuration
+	kafkaClusterArn := app.String(cli.StringOpt{
+		Name:   "kafka-cluster-arn",
+		Desc:   "MSK cluster ARN.",
+		EnvVar: "KAFKA_CLUSTER_ARN",
+	})
 	kafkaAddress := app.String(cli.StringOpt{
 		Name:   "kafka-address",
 		Value:  "kafka:9092",
@@ -67,7 +70,7 @@ func main() {
 		Desc:   "Address (URL) of service that writes persistently the native content",
 		EnvVar: "NATIVE_RW_ADDRESS",
 	})
-	contentUUIDfields := app.Strings(cli.StringsOpt{
+	contentUUIDFields := app.Strings(cli.StringsOpt{
 		Name:   "content-uuid-fields",
 		Value:  []string{},
 		Desc:   "List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3",
@@ -112,31 +115,36 @@ func main() {
 		}
 
 		if *panicGuideUrl == "" {
-			logger.WithError(errors.New("empty panicGuideUrl")).Fatalf("Incorrect usage")
+			logger.Fatal("panicGuideUrl is empty")
 		}
 
-		logger.Infof("[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
-		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
+		logger.Infof("[Startup] Using UUID paths configuration: %#v", *contentUUIDFields)
+		bodyParser := native.NewContentBodyParser(*contentUUIDFields)
 		writer := native.NewWriter(*nativeWriterAddress, *conf, bodyParser, logger)
-		logger.Infof("[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof("[Startup] Using native writer configuration: %#v", writer)
 
 		mh := queue.NewMessageHandler(writer, *contentType, logger)
 
 		var messageProducer *kafka.Producer
 		if *producerTopic != "" {
 			producerConfig := kafka.ProducerConfig{
+				ClusterArn:              kafkaClusterArn,
 				BrokersConnectionString: *kafkaAddress,
 				Topic:                   *producerTopic,
 				Options:                 kafka.DefaultProducerOptions(),
 			}
+			messageProducer, err = kafka.NewProducer(producerConfig)
+			if err != nil {
+				logger.WithError(err).Fatal("Failed to create Kafka producer")
+			}
+			defer messageProducer.Close()
 
-			messageProducer = kafka.NewProducer(producerConfig, logger)
-
-			logger.Infof("[Startup] Producer: %# v", messageProducer)
+			logger.Infof("[Startup] Producer: %#v", messageProducer)
 			mh.ForwardTo(messageProducer)
 		}
 
 		consumerConfig := kafka.ConsumerConfig{
+			ClusterArn:              kafkaClusterArn,
 			BrokersConnectionString: *kafkaAddress,
 			ConsumerGroup:           *consumerGroup,
 			Options:                 kafka.DefaultConsumerOptions(),
@@ -146,22 +154,26 @@ func main() {
 			kafka.NewTopic(*consumerTopic, kafka.WithLagTolerance(int64(*lagTolerance))),
 		}
 
-		messageConsumer := kafka.NewConsumer(consumerConfig, kafkaTopic, logger)
-
-		logger.Infof("[Startup] Consumer: %# v", messageConsumer)
-		logger.Infof("[Startup] Using native writer configuration: %# v", writer)
-		logger.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
-		if messageProducer != nil {
-			logger.Infof("[Startup] Producer: %# v", messageProducer)
+		messageConsumer, err := kafka.NewConsumer(consumerConfig, kafkaTopic, logger)
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to create Kafka consumer")
 		}
 
+		logger.Infof("[Startup] Consumer: %#v", messageConsumer)
+
 		go func() {
-			err = enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl)
+			err = enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl, logger)
 			if err != nil {
 				logger.WithError(err).Fatal("Couldn't set up HTTP listener")
 			}
 		}()
-		startMessageConsumption(messageConsumer, mh.HandleMessage)
+
+		messageConsumer.Start(mh.HandleMessage)
+		defer messageConsumer.Close()
+
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+		<-ch
 	}
 
 	err := app.Run(os.Args)
@@ -170,8 +182,8 @@ func main() {
 	}
 }
 
-func enableHealthCheck(port string, consumer *kafka.Consumer, producer *kafka.Producer, nw native.Writer, pg string) error {
-	hc := resources.NewHealthCheck(consumer, producer, nw, pg)
+func enableHealthCheck(port string, consumer *kafka.Consumer, producer *kafka.Producer, writer native.Writer, panicGuide string, logger *logger.UPPLogger) error {
+	hc := resources.NewHealthCheck(consumer, producer, writer, panicGuide, logger)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/__health", hc.Handler())
@@ -181,13 +193,4 @@ func enableHealthCheck(port string, consumer *kafka.Consumer, producer *kafka.Pr
 
 	http.Handle("/", r)
 	return http.ListenAndServe(":"+port, nil)
-}
-
-func startMessageConsumption(messageConsumer *kafka.Consumer, mh func(message kafka.FTMessage)) {
-	messageConsumer.Start(mh)
-
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	<-ch
-	messageConsumer.Close()
 }
