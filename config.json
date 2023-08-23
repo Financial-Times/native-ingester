@@ -56,5 +56,15 @@
             "content_type": "^(application/)*(vnd.ft-upp-graphic).*$",
             "collection": "universal-content"
         }
+    ],
+    "http://cmdb.ft.com/systems/spark-clips": [
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-clip).*$",
+            "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-clip-set).*$",
+            "collection": "universal-content"
+        }
     ]
 }
