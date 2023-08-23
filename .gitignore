@@ -1,5 +1,6 @@
 /native-ingester*
 /.project
+/.vscode
 
 /vendor/*
 !/vendor/vendor.json
