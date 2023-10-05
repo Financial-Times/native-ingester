@@ -10,5 +10,11 @@
             "content_type": "^(application/json).*$",
             "collection": "video-metadata"
         }
+    ],
+    "http://cmdb.ft.com/systems/sv": [
+        {
+            "content_type": ".*",
+            "collection": "external-metadata"
+        }
     ]
 }
