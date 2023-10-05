@@ -43,7 +43,7 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) {
 		return
 	}
 
-	collection, err := mh.writer.GetCollection(pubEvent.originSystemID(), writerMsg.ContentType())
+	collection, err := mh.writer.GetCollection(pubEvent.originSystemID(), writerMsg.ContentType(), writerMsg.Publication())
 	if err != nil {
 		logMonitoringEvent.
 			WithValidFlag(false).

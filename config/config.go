@@ -6,11 +6,13 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"slices"
 )
 
 type OriginSystemConfig struct {
-	ContentType       string `json:"content_type,binding:required"`
-	Collection        string `json:"collection,binding:required"`
+	ContentType       string   `json:"content_type,binding:required"`
+	Publication       []string `json:"publication"`
+	Collection        string   `json:"collection,binding:required"`
 	contentTypeRegexp *regexp.Regexp
 }
 
@@ -34,17 +36,17 @@ func (c *Configuration) validateConfig() error {
 	return nil
 }
 
-func (c *Configuration) GetCollection(originID string, contentType string) (string, error) {
+func (c *Configuration) GetCollection(originID string, contentType string, publication []interface{}) (string, error) {
 	collection := c.Config[originID]
 	if len(collection) == 0 {
 		return "", errors.New("origin system not found")
 	}
 	for _, val := range collection {
-		if val.contentTypeRegexp.MatchString(contentType) {
+		if val.contentTypeRegexp.MatchString(contentType) && publicationMatch(publication, val) {
 			return val.Collection, nil
 		}
 	}
-	return "", errors.New("origin system and content type not configured")
+	return "", errors.New("origin system, content type and publication not configured")
 }
 
 // ReadConfigFromReader reads config as a json stream from the given reader
@@ -66,4 +68,17 @@ func ReadConfig(confPath string) (c *Configuration, e error) {
 	}
 	defer file.Close()
 	return ReadConfigFromReader(file)
+}
+
+func publicationMatch(publication []interface{}, config OriginSystemConfig) bool {
+	if len(config.Publication) == 0 {
+		return true
+	}
+
+	for _, pub := range publication {
+		if slices.Contains(config.Publication, pub.(string)) {
+			return true
+		}
+	}
+	return false
 }

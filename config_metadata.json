@@ -10,5 +10,12 @@
             "content_type": "^(application/json).*$",
             "collection": "video-metadata"
         }
+    ],
+    "http://cmdb.ft.com/systems/cct": [
+        {
+            "content_type": ".*",
+            "publication": ["8e6c705e-1132-42a2-8db0-c295e29e8658"],
+            "collection": "external-metadata"
+        }
     ]
 }

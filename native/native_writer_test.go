@@ -108,11 +108,11 @@ func TestGetCollectionShort(t *testing.T) {
 
 	w := NewWriter("", *testCollectionsOriginIdsMap, p, log)
 
-	actualCollection, err := w.GetCollection(cctOriginSystemID, aContentType)
+	actualCollection, err := w.GetCollection(cctOriginSystemID, aContentType, nil)
 	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, universalContentCollectionName, actualCollection, "It should return the universal-content collection")
 
-	_, err = w.GetCollection("Origin-Id-that-do-not-exist", aContentType)
+	_, err = w.GetCollection("Origin-Id-that-do-not-exist", aContentType, nil)
 	assert.EqualError(t, err, "origin system not found", "It should return a collection not found error")
 	p.AssertExpectations(t)
 }
@@ -147,7 +147,7 @@ func TestGetCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("Test", func(t *testing.T) {
-			actualCollection, err := w.GetCollection(cctOriginSystemID, tt.contentType)
+			actualCollection, err := w.GetCollection(cctOriginSystemID, tt.contentType, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestGetVideoCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -199,7 +199,7 @@ func TestGetAllCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("Test", func(t *testing.T) {
-			actualCollection, err := w.GetCollection(cctOriginSystemID, tt.contentType)
+			actualCollection, err := w.GetCollection(cctOriginSystemID, tt.contentType, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestGetVideoCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -255,7 +255,7 @@ func TestGetVideoCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("Test", func(t *testing.T) {
-			actualCollection, err := w.GetCollection(o, tt.contentType)
+			actualCollection, err := w.GetCollection(o, tt.contentType, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TestGetVideoCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return
