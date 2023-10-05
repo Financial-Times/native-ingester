@@ -40,7 +40,7 @@ var badBodyMsg = kafka.FTMessage{
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("GetCollection", cctOriginSystemID, contentType, []interface{}(nil)).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
@@ -56,7 +56,7 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("GetCollection", cctOriginSystemID, contentType, []interface{}(nil)).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
@@ -82,7 +82,7 @@ func TestWritePartialContentToNativeSuccessfullyWithForward(t *testing.T) {
 		Headers: goodMsgPartialUpdated.Headers,
 	}
 
-	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("GetCollection", cctOriginSystemID, contentType, []interface{}(nil)).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", updatedBody, nil)
 
 	p := new(mocks.ProducerMock)
@@ -114,7 +114,7 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", cctOriginSystemID, contentType).Return("", errors.New("Collection Not Found"))
+	w.On("GetCollection", cctOriginSystemID, contentType, []interface{}(nil)).Return("", errors.New("Collection Not Found"))
 
 	p := new(mocks.ProducerMock)
 
@@ -129,7 +129,7 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 	log := logger.NewUnstructuredLogger()
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("GetCollection", cctOriginSystemID, contentType, []interface{}(nil)).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", errors.New("today I do not want to write"))
 
 	p := new(mocks.ProducerMock)
@@ -149,7 +149,7 @@ func TestForwardFailBecauseOfProducer(t *testing.T) {
 	hook.SetOutput(&buf)
 
 	w := new(mocks.WriterMock)
-	w.On("GetCollection", cctOriginSystemID, contentType).Return(universalContentCollection, nil)
+	w.On("GetCollection", cctOriginSystemID, contentType, []interface{}(nil)).Return(universalContentCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), universalContentCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
