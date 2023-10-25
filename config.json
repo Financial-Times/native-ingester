@@ -65,6 +65,14 @@
         {
             "content_type": "^(application/)*(vnd.ft-upp-clip-set).*$",
             "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-image).*$",
+            "collection": "universal-content"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-image-set).*$",
+            "collection": "universal-content"
         }
     ]
 }
