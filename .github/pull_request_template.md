@@ -31,10 +31,10 @@ _Is there a better library for doing x_
 - [ ] All PR checks have passed
 - [ ] Changes are deployed on dev before asking for review
 - [ ] Documentations remains up-to-date
-  - [ ] OpenAPI definition file is updated
-  - [ ] README file is updated
-  - [ ] Documentation is updated in upp-docs and upp-public-docs
-  - [ ] Architecture diagrams are updated
+- [ ] OpenAPI definition file is updated
+- [ ] README file is updated
+- [ ] Documentation is updated in upp-docs and upp-public-docs
+- [ ] Architecture diagrams are updated
 
 ___
 This Pull Request follows the rules described in our [Pull Requests Guide](https://github.com/Financial-Times/upp-docs/tree/master/guides/pr-guide)
