@@ -189,6 +189,16 @@ func TestConfiguration_GetCollection(t *testing.T) {
 					Collection:  "universal-content",
 				},
 			},
+			"http://cmdb.ft.com/systems/spark-clips": {
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-clip\\+json).*$",
+					Collection:  "universal-content",
+				},
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-clip-set\\+json).*$",
+					Collection:  "universal-content",
+				},
+			},
 		},
 	}
 	err := c.validateConfig()
@@ -339,6 +349,51 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			args{
 				originID:    "http://cmdb.ft.com/systems/community-event",
 				contentType: "application/vnd-ft.upp-live-event+json",
+			},
+			"",
+			true,
+		},
+		{
+			"Clips OK",
+			args{
+				originID:    "http://cmdb.ft.com/systems/spark-clips",
+				contentType: "application/vnd.ft-upp-clip+json",
+			},
+			"universal-content",
+			false,
+		},
+		{
+			"Clips wrong origin",
+			args{
+				originID:    "http://cmdb.ft.com/systems/community-event",
+				contentType: "application/vnd.ft-upp-clip+json",
+			},
+			"",
+			true,
+		},
+		{
+			"Clips wrong CT",
+			args{
+				originID:    "http://cmdb.ft.com/systems/spark-clips",
+				contentType: "application/vnd.ft-upp-other+json",
+			},
+			"",
+			true,
+		},
+		{
+			"Clipset OK",
+			args{
+				originID:    "http://cmdb.ft.com/systems/spark-clips",
+				contentType: "application/vnd.ft-upp-clip-set+json",
+			},
+			"universal-content",
+			false,
+		},
+		{
+			"Clipset wrong origin",
+			args{
+				originID:    "http://cmdb.ft.com/systems/community-event",
+				contentType: "application/vnd.ft-upp-clip-set+json",
 			},
 			"",
 			true,
