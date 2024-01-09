@@ -402,7 +402,7 @@ func TestConfiguration_GetCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := c.GetCollection(tt.args.originID, tt.args.contentType)
+			got, err := c.GetCollection(tt.args.originID, tt.args.contentType, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Configuration.GetCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -418,6 +418,7 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 	type args struct {
 		originID    string
 		contentType string
+		publication []interface{}
 	}
 	c := &Configuration{
 		Config: map[string][]OriginSystemConfig{
@@ -429,6 +430,12 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 			"http://cmdb.ft.com/systems/next-video-editor": {
 				{ContentType: "application/json",
 					Collection: "video-metadata",
+				},
+			},
+			"http://cmdb.ft.com/systems/cct": {
+				{ContentType: ".*",
+					Publication: []string{"8e6c705e-1132-42a2-8db0-c295e29e8658"},
+					Collection:  "external-metadata",
 				},
 			},
 		},
@@ -447,70 +454,96 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 		{
 			"pac json",
 			args{"http://cmdb.ft.com/systems/pac",
-				"application/json"},
+				"application/json",
+				nil},
 			"pac-metadata",
 			false,
 		},
 		{
 			"pac null CT",
 			args{"http://cmdb.ft.com/systems/pac",
-				""},
+				"",
+				nil},
 			"pac-metadata",
 			false,
 		},
 		{
 			"pac",
 			args{"http://cmdb.ft.com/systems/pac",
-				"anytype"},
+				"anytype",
+				nil},
 			"pac-metadata",
 			false,
 		},
 		{
 			"video wrong CT",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
-				"anytype"},
+				"anytype",
+				nil},
 			"",
 			true,
 		},
 		{
 			"video OK",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
-				"application/json"},
+				"application/json",
+				nil},
 			"video-metadata",
 			false,
 		},
 		{
 			"video OK long CT",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
-				"application/json; utf8"},
+				"application/json; utf8",
+				nil},
 			"video-metadata",
 			false,
 		},
 		{
 			"audio OK",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
-				"application/vnd.ft-upp-audio+json"},
+				"application/vnd.ft-upp-audio+json",
+				nil},
 			"",
 			true,
 		},
 		{
 			"audio long CT",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
-				"application/vnd.ft-upp-audio+json;UTF8"},
+				"application/vnd.ft-upp-audio+json;UTF8",
+				nil},
 			"",
 			true,
 		},
 		{
 			"audio wrong CT",
 			args{"http://cmdb.ft.com/systems/next-video-editor",
-				"application/vnd.ft-upp-audio-json"},
+				"application/vnd.ft-upp-audio-json",
+				nil},
 			"",
 			true,
 		},
 		{
 			"wrong origin",
 			args{"http://cmdb.ft.com/systems/next",
-				"application/vnd.ft-upp-audio+json"},
+				"application/vnd.ft-upp-audio+json",
+				nil},
+			"",
+			true,
+		},
+		{
+			"sustainable views ok",
+			args{"http://cmdb.ft.com/systems/cct",
+				"",
+				[]interface{}{"8e6c705e-1132-42a2-8db0-c295e29e8658"}},
+			"external-metadata",
+			false,
+		},
+		{
+			"sustainable views wrong publication",
+			args{"http://cmdb.ft.com/systems/cct",
+				"",
+				[]interface{}{"8e6c705e-1132-42a2-8db0-c295e29e8659"}},
 			"",
 			true,
 		},
@@ -518,7 +551,7 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := c.GetCollection(tt.args.originID, tt.args.contentType)
+			got, err := c.GetCollection(tt.args.originID, tt.args.contentType, tt.args.publication)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Configuration.GetCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return

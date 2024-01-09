@@ -23,11 +23,12 @@ const (
 	messageTypePartialContentPublished = "cms-partial-content-published"
 	schemaVersionHeader                = "X-Schema-Version"
 	contentRevisionHeader              = "X-Content-Revision"
+	publicationBodyField               = "publication"
 )
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
-	GetCollection(originID string, contentType string) (string, error)
+	GetCollection(originID string, contentType string, publication []interface{}) (string, error)
 	WriteToCollection(msg NativeMessage, collection string) (string, string, error)
 	ConnectivityCheck() (string, error)
 }
@@ -46,8 +47,8 @@ func NewWriter(address string, collectionsOriginIdsMap config.Configuration, par
 	return &nativeWriter{address, collections, http.Client{}, parser, logger}
 }
 
-func (nw *nativeWriter) GetCollection(originID string, contentType string) (string, error) {
-	return nw.collections.GetCollection(originID, contentType)
+func (nw *nativeWriter) GetCollection(originID string, contentType string, publication []interface{}) (string, error) {
+	return nw.collections.GetCollection(originID, contentType, publication)
 }
 
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, string, error) {
@@ -217,4 +218,18 @@ func (msg *NativeMessage) ContentRevision() string {
 
 func (msg *NativeMessage) IsPartialContent() bool {
 	return msg.headers[messageTypeHeader] == messageTypePartialContentPublished
+}
+
+func (msg *NativeMessage) Publication() []interface{} {
+	publication, exists := msg.body[publicationBodyField]
+	if !exists {
+		return nil
+	}
+
+	publicationArray, ok := publication.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	return publicationArray
 }
