@@ -170,8 +170,13 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				},
 			},
 			"http://cmdb.ft.com/systems/spark": {
-				{ContentType: ".*",
-					Collection: "universal-content",
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-content-relation\\+json).*$",
+					Collection:  "content-relation",
+				},
+				{
+					ContentType: ".*",
+					Collection:  "universal-content",
 				},
 			},
 			"http://cmdb.ft.com/systems/spark-lists": {
@@ -399,23 +404,16 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			true,
 		},
 		{
-			"spark content-relation OK",
+			"ContentRelation OK",
 			args{"http://cmdb.ft.com/systems/spark",
 				"application/vnd.ft-upp-content-relation+json"},
 			"content-relation",
 			false,
 		},
 		{
-			"spark content-relation wrong origin",
+			"ContentRelation wrong origin",
 			args{"http://cmdb.ft.com/systems/community-event",
 				"application/vnd.ft-upp-content-relation+json"},
-			"",
-			true,
-		},
-		{
-			"spark content-relation wrong CT",
-			args{"http://cmdb.ft.com/systems/spark",
-				"application/vnd.ft-upp-other+json"},
 			"",
 			true,
 		},
