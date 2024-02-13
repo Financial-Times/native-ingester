@@ -4,8 +4,8 @@ Native Ingester
 
 Native ingester implements the following functionality:
 1. It consumes messages containing native CMS content or native CMS metadata from ONE queue topic.
-1. According to the data source, native ingester writes the content or metadata to a specific db collection.
-1. Optionally, it forwards consumed messages to a different queue.
+2. According to the data source, native ingester writes the content or metadata to a specific db collection.
+3. Optionally, it forwards consumed messages to a different queue.
 
 ## Installation & running locally
 
