@@ -1,6 +1,6 @@
 module github.com/Financial-Times/native-ingester
 
-go 1.21
+go 1.22
 
 require (
 	github.com/Financial-Times/go-fthealth v0.6.2

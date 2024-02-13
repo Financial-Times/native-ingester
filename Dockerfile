@@ -25,4 +25,3 @@ COPY --from=0 /artifacts/* /
 COPY ./*.json /
 
 CMD [ "/native-ingester" ]
-
