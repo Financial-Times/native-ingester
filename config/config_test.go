@@ -417,20 +417,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			"",
 			true,
 		},
-		{
-			"content-relation OK",
-			args{"http://cmdb.ft.com/systems/spark",
-				"application/vnd.ft-upp-content-relation+json"},
-			"content-relation",
-			false,
-		},
-		{
-			"content-relation with wrong system",
-			args{"http://cmdb.ft.com/systems/spark-wrong",
-				"application/vnd.ft-upp-content-relation"},
-			"",
-			true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
