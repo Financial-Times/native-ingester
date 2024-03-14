@@ -165,6 +165,10 @@ func TestConfiguration_GetCollection(t *testing.T) {
 					ContentType: "^(application/)*(vnd.ft-upp-page).*$",
 					Collection:  "pages",
 				},
+				{
+					ContentType: "^(application/)*(vnd.ft-upp-content-relation\\+json).*$",
+					Collection:  "content-relation",
+				},
 				{ContentType: ".*",
 					Collection: "universal-content",
 				},
@@ -406,6 +410,13 @@ func TestConfiguration_GetCollection(t *testing.T) {
 		{
 			"ContentRelation OK",
 			args{"http://cmdb.ft.com/systems/spark",
+				"application/vnd.ft-upp-content-relation+json"},
+			"content-relation",
+			false,
+		},
+		{
+			"ContentRelation OK",
+			args{"http://cmdb.ft.com/systems/cct",
 				"application/vnd.ft-upp-content-relation+json"},
 			"content-relation",
 			false,

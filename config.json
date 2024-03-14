@@ -15,6 +15,10 @@
             "collection": "pages"
         },
         {
+            "content_type": "^(application/)*(vnd.ft-upp-content-relation).*$",
+            "collection": "content-relation"
+        },
+        {
             "content_type": ".*",
             "collection": "universal-content"
         }
