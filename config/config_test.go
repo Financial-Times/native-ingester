@@ -428,6 +428,33 @@ func TestConfiguration_GetCollection(t *testing.T) {
 			"",
 			true,
 		},
+		{
+			"Custom Code Components OK spark",
+			args{
+				originID:    "http://cmdb.ft.com/systems/spark",
+				contentType: "application/vnd.ft-upp-custom-code-component+json",
+			},
+			"universal-content",
+			false,
+		},
+		{
+			"Custom Code Components OK cct",
+			args{
+				originID:    "http://cmdb.ft.com/systems/cct",
+				contentType: "application/vnd.ft-upp-custom-code-component+json",
+			},
+			"universal-content",
+			false,
+		},
+		{
+			"Custom Code Components wrong origin",
+			args{
+				originID:    "http://cmdb.ft.com/systems/community-event",
+				contentType: "application/vnd.ft-upp-custom-code-component+json",
+			},
+			"",
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
