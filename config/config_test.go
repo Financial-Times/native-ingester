@@ -495,6 +495,12 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 					Collection:  "external-metadata",
 				},
 			},
+			"http://cmdb.ft.com/systems/spark": {
+				{ContentType: ".*",
+					Publication: []string{"8e6c705e-1132-42a2-8db0-c295e29e8658", "19d50190-8656-4e91-8d34-82e646ada9c9"},
+					Collection:  "external-metadata",
+				},
+			},
 		},
 	}
 	err := c.validateConfig()
@@ -601,6 +607,22 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 			args{"http://cmdb.ft.com/systems/cct",
 				"",
 				[]interface{}{"8e6c705e-1132-42a2-8db0-c295e29e8659"}},
+			"",
+			true,
+		},
+		{
+			"FTA ok",
+			args{"http://cmdb.ft.com/systems/spark",
+				"",
+				[]interface{}{"19d50190-8656-4e91-8d34-82e646ada9c9"}},
+			"external-metadata",
+			false,
+		},
+		{
+			"fta wrong publication",
+			args{"http://cmdb.ft.com/systems/spark",
+				"",
+				[]interface{}{"116c705e-1132-42a2-8db0-c295e29e8611"}},
 			"",
 			true,
 		},
