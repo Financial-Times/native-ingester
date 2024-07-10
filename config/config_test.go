@@ -479,7 +479,7 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 	}
 	c := &Configuration{
 		Config: map[string][]OriginSystemConfig{
-			"http://cmdb.ft.com/systems/pac": {
+			"http://cmdb.ft.com/systems/ft-pink-annotations": {
 				{ContentType: ".*",
 					Collection: "pac-metadata",
 				},
@@ -515,24 +515,24 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"pac json",
-			args{"http://cmdb.ft.com/systems/pac",
+			"ft pink json",
+			args{"http://cmdb.ft.com/systems/ft-pink-annotations",
 				"application/json",
 				nil},
 			"pac-metadata",
 			false,
 		},
 		{
-			"pac null CT",
-			args{"http://cmdb.ft.com/systems/pac",
+			"ft pink null CT",
+			args{"http://cmdb.ft.com/systems/ft-pink-annotations",
 				"",
 				nil},
 			"pac-metadata",
 			false,
 		},
 		{
-			"pac",
-			args{"http://cmdb.ft.com/systems/pac",
+			"ft pink",
+			args{"http://cmdb.ft.com/systems/ft-pink-annotations",
 				"anytype",
 				nil},
 			"pac-metadata",

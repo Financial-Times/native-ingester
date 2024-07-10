@@ -1,5 +1,5 @@
 {
-    "http://cmdb.ft.com/systems/pac": [
+    "http://cmdb.ft.com/systems/ft-pink-annotations": [
         {
             "content_type": ".*",
             "collection": "pac-metadata"
